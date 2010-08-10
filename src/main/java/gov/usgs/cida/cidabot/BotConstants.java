@@ -10,9 +10,11 @@ public final class BotConstants {
 	public static final String ADD_FAILED = "Unable to create room, try a different name";
 	public static final String DELETED = "Room deleted successfully";
 	public static final String DELETE_FAILED = "Failed to delete room";
+	public static final int DEFAULT_HISTORY_SIZE = 25;
 	
 	public static final String HELP_TEXT = "Command list (supports /cmd or !cmd)\n" +
 		"\t/help - this dialog\n" +
+		"\t/list - lists available rooms\n" +
 		"\t/join [num] - join room, prints available rooms if number unknown\n" +
 		"\t/add <room name> - creates a room with given name and invites you\n" +
 		"\t/del [num] - deletes a room from the system\n";

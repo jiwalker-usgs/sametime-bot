@@ -1,6 +1,5 @@
 package gov.usgs.cida.cidabot;
 
-import com.lotus.sametime.conf.ConfService;
 import com.lotus.sametime.core.types.STUser;
 
 import static gov.usgs.cida.cidabot.BotConstants.*;
@@ -24,6 +23,9 @@ public class BotCommands {
 	public String runCommand(STUser user, String cmd, String args) {
 		if (cmd.equalsIgnoreCase("join")) {
 			return join(user, args);
+		}
+		else if (cmd.equalsIgnoreCase("list")) {
+			return printRoomList();
 		}
 		else if (cmd.equalsIgnoreCase("add")) {
 			return add(user, args);

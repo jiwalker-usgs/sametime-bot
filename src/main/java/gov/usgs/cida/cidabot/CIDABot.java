@@ -2,7 +2,6 @@ package gov.usgs.cida.cidabot;
 
 import com.lotus.sametime.awareness.*;
 import com.lotus.sametime.community.*;
-import com.lotus.sametime.conf.*;
 import com.lotus.sametime.core.comparch.*;
 import com.lotus.sametime.core.constants.*;
 import com.lotus.sametime.core.types.*;
@@ -11,7 +10,6 @@ import com.lotus.sametime.im.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,14 +17,13 @@ import static gov.usgs.cida.cidabot.BotConstants.*;
 
 public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImListener {
 
-	private STSession session;
-	private CommunityService commService;
-	private Thread engine;
-	private InstantMessagingService imService;
+	public static STSession session;
+	public static CommunityService commService;
+	public static InstantMessagingService imService;
 	private ConferenceManager confMan;
-
+	private Thread engine;
 	
-	private Pattern cmdPatt = Pattern.compile("!|/(\\w+)\\s*(.*)");
+	private Pattern cmdPatt = Pattern.compile("[!|/](\\w+)\\s*(.*)");
 	
 	public static void main(String[] args) throws IOException {
 		if (args.length != 2) {
@@ -64,6 +61,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		imService.registerImType(ImTypes.IM_TYPE_CHAT);
 		imService.addImServiceListener(this);
 		
+		// TODO move default rooms to persistent file
 		if (confMan.createConf("Java Developers")) {
 			System.out.println("Added room");
 		}
@@ -93,15 +91,14 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		STUser sender = im.getPartner();
 		String response = parseMessage(message, sender);
 		im.sendText(true, response);
-		System.err.println("Message received from " + sender.getName());
+		System.out.println("Message received from " + sender.getName());
+		System.out.println(message);
 	}
 
 	public void serviceAvailable(AwarenessServiceEvent e) {}
 
 	public void serviceUnavailable(AwarenessServiceEvent e) {}
 	
-
-
 	public void start() {
 		if (engine == null) {
 			engine = new Thread(this, "CIDABot");
@@ -116,6 +113,10 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {}
 		}
+	}
+	
+	public static void sendMessage(STUser user, String message) {
+		return;
 	}
 
 	private String parseMessage(String text, STUser user) {
@@ -135,8 +136,4 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 			return HELP_TEXT;
 		}
 	}
-
-
-	
-
 }
