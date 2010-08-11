@@ -1,11 +1,12 @@
 package gov.usgs.cida.cidabot;
 
+import gov.usgs.cida.cidabot.helper.KeywordHelper;
+
 import com.lotus.sametime.core.types.STUser;
 
 import static gov.usgs.cida.cidabot.BotConstants.*;
 
 public class BotCommands {
-	
 	
 	private ConferenceManager confMan;
 	
@@ -33,9 +34,46 @@ public class BotCommands {
 		else if (cmd.equalsIgnoreCase("del")) {
 			return del(args);
 		}
+		else if (cmd.equalsIgnoreCase("keyword")) {
+			return keyword(args);
+		}
+		else if (cmd.equalsIgnoreCase("history")) {
+			return history(args);
+		}
 		return HELP_TEXT;
 	}
 	
+	private String history(String args) {
+		if (args == null || args.equals("")) {
+			return printRoomList();
+		}
+		String[] roomList = confMan.roomList();
+		try {
+			String selection = roomList[Integer.parseInt(args)];
+			return confMan.getHistory(selection);
+		}
+		catch (NumberFormatException nfe) {
+			return printRoomList();
+		}
+		catch (IndexOutOfBoundsException ioobe) {
+			return printRoomList();
+		}
+	}
+
+	private String keyword(String args) {
+		String [] words = args.split(" ");
+		if (args == null || args.equals("") || words.length < 2) {
+			return printRoomList();
+		}
+		StringBuilder phrase = new StringBuilder();
+		for (int i=1; i<words.length; i++) {
+			phrase.append(words[i]);
+			phrase.append(" ");
+		}
+		KeywordHelper.addToKeywordMap(words[0], phrase.toString());
+		return KEYWORD_ADDED;
+	}
+
 	private String join(STUser user, String roomArgs) {
 		if (roomArgs == null || roomArgs.equals("")) {
 			return printRoomList();
@@ -44,6 +82,7 @@ public class BotCommands {
 		try {
 			String selection = roomList[Integer.parseInt(roomArgs)];
 			if (confMan.inviteConf(selection, user)) {
+				System.err.println("invited " + user.getName() + " to room " + selection);
 				return INVITED;
 			}
 			else {

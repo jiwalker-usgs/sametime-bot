@@ -20,6 +20,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 	public static STSession session;
 	public static CommunityService commService;
 	public static InstantMessagingService imService;
+	public static STLoginId myLoginId;
 	private ConferenceManager confMan;
 	private Thread engine;
 	
@@ -53,6 +54,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		commService.loginByPassword(serverName, userId, password.toCharArray());
 
 		confMan = new ConferenceManager(session);
+
 	}
 
 	public void loggedIn(LoginEvent e) {
@@ -60,6 +62,8 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		imService = (InstantMessagingService)session.getCompApi(InstantMessagingService.COMP_NAME);
 		imService.registerImType(ImTypes.IM_TYPE_CHAT);
 		imService.addImServiceListener(this);
+
+		myLoginId = commService.getLogin().getMyUserInstance().getLoginId();
 		
 		// TODO move default rooms to persistent file
 		if (confMan.createConf("Java Developers")) {

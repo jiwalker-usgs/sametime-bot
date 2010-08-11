@@ -1,10 +1,10 @@
 package gov.usgs.cida.cidabot;
 
+import gov.usgs.cida.cidabot.helper.KeywordHelper;
 import gov.usgs.cida.cidabot.helper.RoomHelper;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 
 import com.lotus.sametime.conf.ConfInfo;
 import com.lotus.sametime.conf.ConfListener;
@@ -21,10 +21,12 @@ public class ConferenceManager implements ConfListener {
 
 	private ConfService confService;
 	private Map<String, RoomHelper> rooms;
+	private Map<Integer, RoomHelper> reverseRoomMap;
 	private BotCommands coms;
 	
 	public ConferenceManager(STSession session) {
 		rooms = new HashMap<String, RoomHelper>();
+		reverseRoomMap = new HashMap<Integer, RoomHelper>();
 		confService = (ConfService)session.getCompApi(ConfService.COMP_NAME);
 		confService.addConfListener(this);
 		coms = new BotCommands(this);
@@ -41,6 +43,7 @@ public class ConferenceManager implements ConfListener {
 			confService.joinToConference(confId);
 			RoomHelper confObj = new RoomHelper(confId, roomName, DEFAULT_HISTORY_SIZE);
 			rooms.put(roomName, confObj);
+			reverseRoomMap.put(confId, confObj);
 		}
 		return true;
 	}
@@ -51,10 +54,15 @@ public class ConferenceManager implements ConfListener {
 		}
 		else {
 			Integer confId = rooms.get(roomName).getId();
-			confService.inviteToConference(confId, user.getId(), INVITE_TEXT, new STLoginId(user.getId().getId(),
-					"CIDA"), INVITE_TEXT);
-					//commService.getLogin().getCommunityId()), INVITE_TEXT);
+			confService.inviteToConference(confId, user.getId(), INVITE_TEXT, null, INVITE_TEXT);
 			return true;
+					
+			//new STLoginId(user.getId().getId(),
+			//"CIDA"), INVITE_TEXT);
+			//commService.getLogin().getCommunityId()), INVITE_TEXT);
+			//confService.autoInviteToConference(confId, user.getId(), INVITE_TEXT, null,
+			//INVITE_TEXT);
+			//new STLoginId(user.getId().getId(), user.getId().getCommunityName()), INVITE_TEXT);
 		}
 	}
 	
@@ -75,6 +83,10 @@ public class ConferenceManager implements ConfListener {
 		return roomList;
 	}
 	
+	public String getHistory(String roomName) {
+		return rooms.get(roomName).getHistory();
+	}
+	
 	public String runCommand(STUser user, String cmd, String args) {
 		return coms.runCommand(user, cmd, args);
 	}
@@ -90,7 +102,12 @@ public class ConferenceManager implements ConfListener {
 	public void conferenceDestroyed(Integer arg0, int arg1) {}
 
 	@Override
-	public void conferenceIntruded(Integer arg0, STUserInstance arg1, short arg2) {}
+	public void conferenceIntruded(Integer confId, STUserInstance userInst, short dontknowwhatthisis) {
+		RoomHelper helper = reverseRoomMap.get(confId);
+		if (helper != null) {
+			helper.addUser(userInst);
+		}
+	}
 
 	@Override
 	public void dataReceived(Integer arg0, boolean arg1, STLoginId arg2,
@@ -100,8 +117,9 @@ public class ConferenceManager implements ConfListener {
 	public void invitationDeclined(Integer arg0, STUserInstance arg1, int arg2) {}
 
 	@Override
-	public void invitedToConference(Integer arg0, ConfInfo arg1,
-			STUserInstance arg2, EncLevel arg3, boolean arg4, String arg5) {}
+	public void invitedToConference(Integer confId, ConfInfo info,
+			STUserInstance userInst, EncLevel enc, boolean arg4, String arg5) {
+	}
 
 	@Override
 	public void serviceAvailable() {}
@@ -114,17 +132,28 @@ public class ConferenceManager implements ConfListener {
 	// for now just pass it through to sendText()
 	public void textReceived(Integer confId, boolean encrypted, STLoginId login,
 			String text) {
-		//System.out.println(login.getId() + ": " + text);
-		String username = login.getCommunityName();
-		System.out.println("username: " + username);
-		if (text.toLowerCase().contains("blodgett")) {
-			confService.sendText(confId, encrypted, "That's some undergrad shit");
+		RoomHelper rh = reverseRoomMap.get(confId);
+		if (rh != null) {
+			String userName = rh.getUser(login.getId()).getName();
+			rh.addHistory(userName + ": " + text);
+		}
+		String keywordResult = KeywordHelper.checkForKeywords(text);
+		if (keywordResult != null && login != CIDABot.myLoginId) {
+			confService.sendText(confId, encrypted, keywordResult);
 		}
 	}
 
 	@Override
-	public void userEntered(Integer arg0, STUserInstance arg1) {}
+	public void userEntered(Integer confId, STUserInstance userInst) {
+		RoomHelper room = reverseRoomMap.get(confId);
+		if (room != null) {
+			room.addUser(userInst);
+		}
+	}
 
 	@Override
-	public void userLeft(Integer arg0, STLoginId arg1) {}
+	public void userLeft(Integer confId, STLoginId login) {
+		RoomHelper room = reverseRoomMap.get(confId);
+		
+	}
 }
