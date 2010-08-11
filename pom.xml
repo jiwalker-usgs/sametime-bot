@@ -5,7 +5,7 @@
 	<groupId>gov.usgs.cida</groupId>
 	<artifactId>SametimeBot</artifactId>
 	<version>0.0.1</version>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 
 	<name>SametimeBot</name>
 
@@ -48,7 +48,7 @@
         <dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-			<version>1.2.16</version>
+			<version>1.2.13</version>
 			<type>jar</type>
 			<scope>compile</scope>
 		</dependency>
