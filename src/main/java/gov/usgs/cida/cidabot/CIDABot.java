@@ -13,22 +13,25 @@ import java.io.InputStreamReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
+
 import static gov.usgs.cida.cidabot.BotConstants.*;
 
 public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImListener {
 
-	public static STSession session;
-	public static CommunityService commService;
-	public static InstantMessagingService imService;
-	public static STLoginId myLoginId;
+	private STSession session;
+	private CommunityService commService;
+	private InstantMessagingService imService;
+
 	private ConferenceManager confMan;
 	private Thread engine;
+	private static Logger log = Logger.getLogger(CIDABot.class);
 	
 	private Pattern cmdPatt = Pattern.compile("[!|/](\\w+)\\s*(.*)");
 	
 	public static void main(String[] args) throws IOException {
 		if (args.length != 2) {
-			System.err.println("usage: cidabot <server name> <user ID>; (will prompt for password)");
+			log.debug("usage: cidabot <server name> <user ID>; (will prompt for password)");
 			System.exit(1);
 		}
 		System.out.print("Enter password: ");
@@ -52,33 +55,35 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		commService = (CommunityService)session.getCompApi(CommunityService.COMP_NAME);
 		commService.addLoginListener(this);
 		commService.loginByPassword(serverName, userId, password.toCharArray());
-
+		
 		confMan = new ConferenceManager(session);
 
 	}
 
 	public void loggedIn(LoginEvent e) {
-		System.err.println("Logged In");
+		log.debug("Logged In");
 		imService = (InstantMessagingService)session.getCompApi(InstantMessagingService.COMP_NAME);
 		imService.registerImType(ImTypes.IM_TYPE_CHAT);
 		imService.addImServiceListener(this);
 
-		myLoginId = commService.getLogin().getMyUserInstance().getLoginId();
+		confMan.setMyLoginId(commService.getLogin().getMyUserInstance().getLoginId());
 		
 		// TODO move default rooms to persistent file
 		if (confMan.createConf("Java Developers")) {
-			System.out.println("Added room");
+			log.info("Added room");
 		}
 	}
 
 	public void loggedOut(LoginEvent e) {
-		System.err.println("Logged Out");
+		log.debug("Logged Out");
+		session = null;
+		
 	}
 
 
 	public void imReceived(ImEvent e) {
 		e.getIm().addImListener(this);
-		System.err.println("IM Received");
+		log.debug("IM Received");
 	}
 
 	public void dataReceived(ImEvent e) {}
@@ -95,8 +100,8 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		STUser sender = im.getPartner();
 		String response = parseMessage(message, sender);
 		im.sendText(true, response);
-		System.out.println("Message received from " + sender.getName());
-		System.out.println(message);
+		log.info("Message received from " + sender.getName());
+		log.info(message);
 	}
 
 	public void serviceAvailable(AwarenessServiceEvent e) {}
@@ -118,10 +123,6 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 			} catch (InterruptedException e) {}
 		}
 	}
-	
-	public static void sendMessage(STUser user, String message) {
-		return;
-	}
 
 	private String parseMessage(String text, STUser user) {
 		Matcher cmdMatch = cmdPatt.matcher(text);
@@ -136,7 +137,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 			}
 		}
 		else {
-			System.out.println("Command not matching");
+			log.info("Command not matching");
 			return HELP_TEXT;
 		}
 	}

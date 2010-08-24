@@ -3,7 +3,7 @@ package gov.usgs.cida.cidabot;
 import gov.usgs.cida.cidabot.helper.KeywordHelper;
 import gov.usgs.cida.cidabot.helper.RoomHelper;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.lotus.sametime.conf.ConfInfo;
@@ -23,10 +23,11 @@ public class ConferenceManager implements ConfListener {
 	private Map<String, RoomHelper> rooms;
 	private Map<Integer, RoomHelper> reverseRoomMap;
 	private BotCommands coms;
+	private STLoginId myLoginId;
 	
 	public ConferenceManager(STSession session) {
-		rooms = new HashMap<String, RoomHelper>();
-		reverseRoomMap = new HashMap<Integer, RoomHelper>();
+		rooms = new LinkedHashMap<String, RoomHelper>();
+		reverseRoomMap = new LinkedHashMap<Integer, RoomHelper>();
 		confService = (ConfService)session.getCompApi(ConfService.COMP_NAME);
 		confService.addConfListener(this);
 		coms = new BotCommands(this);
@@ -138,7 +139,7 @@ public class ConferenceManager implements ConfListener {
 			rh.addHistory(userName + ": " + text);
 		}
 		String keywordResult = KeywordHelper.checkForKeywords(text);
-		if (keywordResult != null && login != CIDABot.myLoginId) {
+		if (keywordResult != null && login != getMyLoginId()) {
 			confService.sendText(confId, encrypted, keywordResult);
 		}
 	}
@@ -154,6 +155,14 @@ public class ConferenceManager implements ConfListener {
 	@Override
 	public void userLeft(Integer confId, STLoginId login) {
 		RoomHelper room = reverseRoomMap.get(confId);
-		
+		room.removeUser(room.getUser(login.getId()));
+	}
+	
+	public void setMyLoginId(STLoginId myLoginId) {
+		this.myLoginId = myLoginId;
+	}
+
+	public STLoginId getMyLoginId() {
+		return myLoginId;
 	}
 }

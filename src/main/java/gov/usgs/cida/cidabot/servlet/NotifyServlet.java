@@ -46,8 +46,8 @@ public class NotifyServlet extends HttpServlet{
 		}
 		else {
 			response.setStatus(HttpServletResponse.SC_OK);
-			STUser stUser = new STUser(new STId(user, CIDABot.commService.toString()), user, user);
-			CIDABot.sendMessage(stUser, message);
+			//STUser stUser = new STUser(new STId(user, CIDABot.commService.toString()), user, user);
+			//CIDABot.sendMessage(stUser, message);
 		}
 	}
 }
