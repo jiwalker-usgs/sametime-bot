@@ -6,6 +6,8 @@ import gov.usgs.cida.cidabot.helper.RoomHelper;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import com.lotus.sametime.conf.ConfInfo;
 import com.lotus.sametime.conf.ConfListener;
 import com.lotus.sametime.conf.ConfService;
@@ -14,6 +16,8 @@ import com.lotus.sametime.core.constants.EncLevel;
 import com.lotus.sametime.core.types.STLoginId;
 import com.lotus.sametime.core.types.STUser;
 import com.lotus.sametime.core.types.STUserInstance;
+import com.lotus.sametime.places.Place;
+import com.lotus.sametime.places.PlacesService;
 
 import static gov.usgs.cida.cidabot.BotConstants.*;
 
@@ -21,43 +25,50 @@ public class ConferenceManager implements ConfListener {
 
 	private ConfService confService;
 	private Map<String, RoomHelper> rooms;
-	private Map<Integer, RoomHelper> reverseRoomMap;
+	private Map<Integer, RoomHelper> intRoomMap;
 	private BotCommands coms;
 	private STLoginId myLoginId;
 	
+	private PlacesService placesService;
+	
+	private static Logger log = Logger.getLogger(ConferenceManager.class);
+	
 	public ConferenceManager(STSession session) {
 		rooms = new LinkedHashMap<String, RoomHelper>();
-		reverseRoomMap = new LinkedHashMap<Integer, RoomHelper>();
+		intRoomMap = new LinkedHashMap<Integer, RoomHelper>();
 		confService = (ConfService)session.getCompApi(ConfService.COMP_NAME);
 		confService.addConfListener(this);
+		placesService = (PlacesService)session.getCompApi(PlacesService.COMP_NAME);
 		coms = new BotCommands(this);
 	}
 	
 	public boolean createConf(String roomName) {
-		if (rooms.containsKey(roomName)) {
+		String lcRoomName = roomName.toLowerCase();
+		if (rooms.containsKey(lcRoomName)) {
 			return false;
 		}
-		ConfInfo info = new ConfInfo(roomName, roomName);
+		ConfInfo info = new ConfInfo(lcRoomName, roomName);
 		if (confService != null) {
 			Integer confId = confService.createConference(info, EncLevel.ENC_LEVEL_DONT_CARE);
-			System.out.println("create conference returned: " + confId);
+			log.debug("create conference returned: " + confId);
 			confService.joinToConference(confId);
 			RoomHelper confObj = new RoomHelper(confId, roomName, DEFAULT_HISTORY_SIZE);
-			rooms.put(roomName, confObj);
-			reverseRoomMap.put(confId, confObj);
+			rooms.put(lcRoomName, confObj);
+			intRoomMap.put(confId, confObj);
 		}
 		return true;
 	}
 	
 	public boolean inviteConf(String roomName, STUser user) {
-		if (!rooms.containsKey(roomName)) {
+		String lcRoomName = roomName.toLowerCase();
+		if (!rooms.containsKey(lcRoomName)) {
 			return false;
 		}
 		else {
-			Integer confId = rooms.get(roomName).getId();
+			Integer confId = rooms.get(lcRoomName).getId();
 			confService.inviteToConference(confId, user.getId(), INVITE_TEXT, null, INVITE_TEXT);
 			return true;
-					
+			
 			//new STLoginId(user.getId().getId(),
 			//"CIDA"), INVITE_TEXT);
 			//commService.getLogin().getCommunityId()), INVITE_TEXT);
@@ -68,13 +79,15 @@ public class ConferenceManager implements ConfListener {
 	}
 	
 	public boolean removeConf(String roomName) {
-		if (!rooms.containsKey(roomName)) {
+		String lcRoomName = roomName.toLowerCase();
+		if (!rooms.containsKey(lcRoomName)) {
 			return false;
 		}
 		
-		Integer confId = rooms.get(roomName).getId();
+		Integer confId = rooms.get(lcRoomName).getId();
 		confService.destroyConference(confId);
-		rooms.remove(roomName);
+		rooms.remove(lcRoomName);
+		intRoomMap.remove(confId);
 		return true;
 	}
 	
@@ -85,7 +98,13 @@ public class ConferenceManager implements ConfListener {
 	}
 	
 	public String getHistory(String roomName) {
-		return rooms.get(roomName).getHistory();
+		RoomHelper room = rooms.get(roomName);
+		if (room != null) {
+			return room.getHistory();
+		}
+		else {
+			return "";
+		}
 	}
 	
 	public String runCommand(STUser user, String cmd, String args) {
@@ -93,8 +112,11 @@ public class ConferenceManager implements ConfListener {
 	}
 
 	@Override
-	public void conferenceCreated(Integer arg0, ConfInfo arg1, EncLevel arg2,
-			STUserInstance[] arg3) {}
+	public void conferenceCreated(Integer confId, ConfInfo info, EncLevel encrypt,
+			STUserInstance[] users) {
+		Place place = placesService.createPlace(info.getName(), info.getDisplayName(), encrypt, 0);
+		place.enter();
+	}
 
 	@Override
 	public void conferenceDenied(Integer arg0, int arg1) {}
@@ -104,10 +126,6 @@ public class ConferenceManager implements ConfListener {
 
 	@Override
 	public void conferenceIntruded(Integer confId, STUserInstance userInst, short dontknowwhatthisis) {
-		RoomHelper helper = reverseRoomMap.get(confId);
-		if (helper != null) {
-			helper.addUser(userInst);
-		}
 	}
 
 	@Override
@@ -133,10 +151,15 @@ public class ConferenceManager implements ConfListener {
 	// for now just pass it through to sendText()
 	public void textReceived(Integer confId, boolean encrypted, STLoginId login,
 			String text) {
-		RoomHelper rh = reverseRoomMap.get(confId);
+		RoomHelper rh = intRoomMap.get(confId);
 		if (rh != null) {
-			String userName = rh.getUser(login.getId()).getName();
-			rh.addHistory(userName + ": " + text);
+			log.debug("user " + login.getId() + " sent message " + text);
+			STUser userObj = rh.getUser(login.getId());
+			if (userObj != null) {
+				String userName = userObj.getName();
+				rh.addHistory(userName + ": " + text);
+				log.debug(userName + " said " + text);
+			}
 		}
 		String keywordResult = KeywordHelper.checkForKeywords(text);
 		if (keywordResult != null && login != getMyLoginId()) {
@@ -146,16 +169,20 @@ public class ConferenceManager implements ConfListener {
 
 	@Override
 	public void userEntered(Integer confId, STUserInstance userInst) {
-		RoomHelper room = reverseRoomMap.get(confId);
+		RoomHelper room = intRoomMap.get(confId);
+		log.debug("user entered: " + userInst.getDisplayName());
 		if (room != null) {
 			room.addUser(userInst);
+			log.debug("user joining has id " + userInst.getLoginId().getId());
 		}
 	}
 
 	@Override
 	public void userLeft(Integer confId, STLoginId login) {
-		RoomHelper room = reverseRoomMap.get(confId);
-		room.removeUser(room.getUser(login.getId()));
+		RoomHelper room = intRoomMap.get(confId);
+		if (room != null) { 
+			room.removeUser(login.getId());
+		}
 	}
 	
 	public void setMyLoginId(STLoginId myLoginId) {

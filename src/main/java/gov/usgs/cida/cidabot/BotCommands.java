@@ -47,17 +47,15 @@ public class BotCommands {
 		if (args == null || args.equals("")) {
 			return printRoomList();
 		}
-		String[] roomList = confMan.roomList();
-		try {
-			String selection = roomList[Integer.parseInt(args)];
-			return confMan.getHistory(selection);
-		}
-		catch (NumberFormatException nfe) {
+
+		String history = confMan.getHistory(args);
+		if (history == null) {
 			return printRoomList();
 		}
-		catch (IndexOutOfBoundsException ioobe) {
-			return printRoomList();
+		else {
+			return history;
 		}
+
 	}
 
 	private String keyword(String args) {
@@ -78,11 +76,9 @@ public class BotCommands {
 		if (roomArgs == null || roomArgs.equals("")) {
 			return printRoomList();
 		}
-		String[] roomList = confMan.roomList();
 		try {
-			String selection = roomList[Integer.parseInt(roomArgs)];
-			if (confMan.inviteConf(selection, user)) {
-				System.err.println("invited " + user.getName() + " to room " + selection);
+			if (confMan.inviteConf(roomArgs, user)) {
+				System.err.println("invited " + user.getName() + " to room " + roomArgs);
 				return INVITED;
 			}
 			else {
@@ -134,8 +130,8 @@ public class BotCommands {
 		StringBuffer strbuf = new StringBuffer();
 		strbuf.append(ROOM_LIST_HEAD);
 		String[] roomList = confMan.roomList();
-		for (int i=0; i<roomList.length; i++) {
-			strbuf.append("[" + i + "]: " + roomList[i] + "\n"); 
+		for (String roomname : roomList) {
+			strbuf.append(roomname + "\n"); 
 		}
 		return strbuf.toString();
 	}

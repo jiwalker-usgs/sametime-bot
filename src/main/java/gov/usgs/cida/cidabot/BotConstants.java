@@ -16,9 +16,9 @@ public final class BotConstants {
 	public static final String HELP_TEXT = "Command list (supports /cmd or !cmd)\n" +
 		"\t/help - this dialog\n" +
 		"\t/list - lists available rooms\n" +
-		"\t/join <num> - join room, prints available rooms if number unknown\n" +
+		"\t/join <room name> - join room, prints available rooms if number unknown\n" +
 		"\t/add <room name> - creates a room with given name and invites you\n" +
-		"\t/del <num> - deletes a room from the system\n" +
-		//"\t/history <num> - prints out recent history from specified room\n" +
+		"\t/del <room name> - deletes a room from the system\n" +
+		"\t/history <room name> - prints out recent history from specified room\n" +
 		"\t/keyword <word> <phrase> - adds a keyword to watch for in chats\n";
 }

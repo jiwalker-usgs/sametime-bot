@@ -20,11 +20,13 @@ import static gov.usgs.cida.cidabot.BotConstants.*;
 public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImListener {
 
 	private STSession session;
-	private CommunityService commService;
+	private CommunityService communityService;
 	private InstantMessagingService imService;
 
 	private ConferenceManager confMan;
 	private Thread engine;
+	private String[] defaultRooms = { "JavaDev", "GenDev", "PM", "CIDA" };
+	
 	private static Logger log = Logger.getLogger(CIDABot.class);
 	
 	private Pattern cmdPatt = Pattern.compile("[!|/](\\w+)\\s*(.*)");
@@ -52,9 +54,9 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		session.loadSemanticComponents();
 		session.start();
 
-		commService = (CommunityService)session.getCompApi(CommunityService.COMP_NAME);
-		commService.addLoginListener(this);
-		commService.loginByPassword(serverName, userId, password.toCharArray());
+		communityService = (CommunityService)session.getCompApi(CommunityService.COMP_NAME);
+		communityService.addLoginListener(this);
+		communityService.loginByPassword(serverName, userId, password.toCharArray());
 		
 		confMan = new ConferenceManager(session);
 
@@ -66,11 +68,13 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		imService.registerImType(ImTypes.IM_TYPE_CHAT);
 		imService.addImServiceListener(this);
 
-		confMan.setMyLoginId(commService.getLogin().getMyUserInstance().getLoginId());
+		confMan.setMyLoginId(communityService.getLogin().getMyUserInstance().getLoginId());
 		
 		// TODO move default rooms to persistent file
-		if (confMan.createConf("Java Developers")) {
-			log.info("Added room");
+		for (String room : defaultRooms) {
+			if (confMan.createConf(room)) {
+				log.info("Added room " + room);
+			}
 		}
 	}
 
@@ -122,6 +126,11 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {}
 		}
+	}
+	
+	public void close() {
+		communityService.logout();
+		session.stop();
 	}
 
 	private String parseMessage(String text, STUser user) {
