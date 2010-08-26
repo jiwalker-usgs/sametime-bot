@@ -101,7 +101,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 	public void textReceived(ImEvent e) {
 		Im im = e.getIm();
 		String message = e.getText();
-		STUser sender = im.getPartner();
+		STUserInstance sender = im.getPartnerDetails();
 		String response = parseMessage(message, sender);
 		im.sendText(true, response);
 		log.info("Message received from " + sender.getName());
@@ -133,7 +133,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		session.stop();
 	}
 
-	private String parseMessage(String text, STUser user) {
+	private String parseMessage(String text, STUserInstance user) {
 		Matcher cmdMatch = cmdPatt.matcher(text);
 		if (cmdMatch.matches()) {
 			String cmd = cmdMatch.group(1);

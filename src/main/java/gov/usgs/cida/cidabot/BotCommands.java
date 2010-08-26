@@ -2,7 +2,7 @@ package gov.usgs.cida.cidabot;
 
 import gov.usgs.cida.cidabot.helper.KeywordHelper;
 
-import com.lotus.sametime.core.types.STUser;
+import com.lotus.sametime.core.types.STUserInstance;
 
 import static gov.usgs.cida.cidabot.BotConstants.*;
 
@@ -21,7 +21,7 @@ public class BotCommands {
 	 * @param args argument list for command (may be null)
 	 * @return result string from command
 	 */
-	public String runCommand(STUser user, String cmd, String args) {
+	public String runCommand(STUserInstance user, String cmd, String args) {
 		if (cmd.equalsIgnoreCase("join")) {
 			return join(user, args);
 		}
@@ -72,7 +72,7 @@ public class BotCommands {
 		return KEYWORD_ADDED;
 	}
 
-	private String join(STUser user, String roomArgs) {
+	private String join(STUserInstance user, String roomArgs) {
 		if (roomArgs == null || roomArgs.equals("")) {
 			return printRoomList();
 		}
@@ -90,7 +90,7 @@ public class BotCommands {
 		}
 	}
 	
-	private String add(STUser user, String roomArgs) {
+	private String add(STUserInstance user, String roomArgs) {
 		if (roomArgs == null || roomArgs.equals("")) {
 			return ADD_FAILED;
 		}
@@ -131,7 +131,7 @@ public class BotCommands {
 		strbuf.append(ROOM_LIST_HEAD);
 		String[] roomList = confMan.roomList();
 		for (String roomname : roomList) {
-			strbuf.append(roomname + "\n"); 
+			strbuf.append(roomname + "\n");
 		}
 		return strbuf.toString();
 	}
