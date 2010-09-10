@@ -21,7 +21,7 @@ public class BotHandlerServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		log.debug("post!");
+		log.debug("post");
 		String action = req.getParameter("action");
 		if ("login".equals(action)) {
 			String serverName = req.getParameter("server");

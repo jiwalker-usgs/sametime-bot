@@ -109,20 +109,13 @@ public class BotCommands {
 	
 	private String del(String roomArgs) {
 		if (roomArgs == null || roomArgs.equals("")) {
-			return printRoomList();
+			return HELP_TEXT;
 		}
-		String[] roomList = confMan.roomList();
-		try {
-			String selection = roomList[Integer.parseInt(roomArgs)];
-			if (confMan.removeConf(selection)) {
-				return DELETED;
-			}
-			else {
-				return DELETE_FAILED;
-			}
+		if (confMan.removeConf(roomArgs)) {
+			return DELETED;
 		}
-		catch (NumberFormatException nfe) {
-			return DELETE_FAILED + "\n" + printRoomList();
+		else {
+			return DELETE_FAILED;
 		}
 	}
 	

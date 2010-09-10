@@ -174,7 +174,7 @@ public class ConferenceManager implements ConfListener {
 			}
 		}
 		String keywordResult = KeywordHelper.checkForKeywords(text);
-		if (keywordResult != null && login != getMyLoginId()) {
+		if (keywordResult != null && !login.equals(getMyLoginId())) {
 			confService.sendText(confId, encrypted, keywordResult);
 		}
 	}
