@@ -1,5 +1,6 @@
 package gov.usgs.cida.cidabot;
 
+import java.io.EOFException;
 import com.lotus.sametime.awareness.*;
 import com.lotus.sametime.community.*;
 import com.lotus.sametime.core.comparch.*;
@@ -7,9 +8,6 @@ import com.lotus.sametime.core.constants.*;
 import com.lotus.sametime.core.types.*;
 import com.lotus.sametime.im.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,23 +23,23 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 
 	private ConferenceManager confMan;
 	private Thread engine;
-	private String[] defaultRooms = { "JavaDev", "GenDev", "PM", "CIDA" };
+	private String[] defaultRooms = { /*"JavaDev",*/ "GenDev", "PM", "CIDA" };
 	
 	private static Logger log = Logger.getLogger(CIDABot.class);
 	
 	private Pattern cmdPatt = Pattern.compile("[!|/](\\w+)\\s*(.*)");
 	
-	public static void main(String[] args) throws IOException {
-		if (args.length != 2) {
-			log.debug("usage: cidabot <server name> <user ID>; (will prompt for password)");
-			System.exit(1);
-		}
-		System.out.print("Enter password: ");
-		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-		String password = reader.readLine();
-		CIDABot cidaSametimeBot = new CIDABot(args[0], args[1], password);
-		cidaSametimeBot.start();
-	}
+//	public static void main(String[] args) throws IOException {
+//		if (args.length != 2) {
+//			log.debug("usage: cidabot <server name> <user ID>; (will prompt for password)");
+//			System.exit(1);
+//		}
+//		System.out.print("Enter password: ");
+//		BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+//		String password = reader.readLine();
+//		CIDABot cidaSametimeBot = new CIDABot(args[0], args[1], password);
+//		cidaSametimeBot.start();
+//	}
 
 	public CIDABot(String serverName, String userId, String password) {
 		try {
@@ -62,6 +60,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 
 	}
 
+	@Override
 	public void loggedIn(LoginEvent e) {
 		log.debug("Logged In");
 		imService = (InstantMessagingService)session.getCompApi(InstantMessagingService.COMP_NAME);
@@ -72,32 +71,44 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		
 		// TODO move default rooms to persistent file
 		for (String room : defaultRooms) {
-			if (confMan.createConf(room)) {
-				log.info("Added room " + room);
+			try {
+				if (confMan.createConf(room)) {
+					log.info("Added room " + room);
+				}
+			}
+			catch (EOFException eofe) {
+				// this is thrown for some reason
 			}
 		}
 	}
 
+	@Override
 	public void loggedOut(LoginEvent e) {
 		log.debug("Logged Out");
-		session = null;
-		
+		session.stop();
+		session.unloadSession();
 	}
 
 
+	@Override
 	public void imReceived(ImEvent e) {
 		e.getIm().addImListener(this);
 		log.debug("IM Received");
 	}
 
+	@Override
 	public void dataReceived(ImEvent e) {}
 
+	@Override
 	public void imClosed(ImEvent e) {}
 
+	@Override
 	public void imOpened(ImEvent e) {}
 
+	@Override
 	public void openImFailed(ImEvent e) {}
 
+	@Override
 	public void textReceived(ImEvent e) {
 		Im im = e.getIm();
 		String message = e.getText();
@@ -119,6 +130,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		}
 	}
 
+	@Override
 	public void run() {
 		Thread myThread = Thread.currentThread();
 		while (engine == myThread) {
@@ -131,6 +143,13 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 	public void close() {
 		communityService.logout();
 		session.stop();
+	}
+
+	public boolean isLoggedIn() {
+		if (communityService == null || session == null) {
+			return false;
+		}
+		return communityService.isLoggedIn() && session.isActive();
 	}
 
 	private String parseMessage(String text, STUserInstance user) {

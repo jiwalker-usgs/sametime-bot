@@ -29,15 +29,34 @@ public class BotHandlerServlet extends HttpServlet {
 			String password = req.getParameter("password");
 			
 			log.debug("server:" + serverName + " userId:" + userId + " password:" + password);
-			cidaSametimeBot = new CIDABot(serverName, userId, password);
+			if (cidaSametimeBot == null) {
+				cidaSametimeBot = new CIDABot(serverName, userId, password);
+			}
 			cidaSametimeBot.start();
-			RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/jsp/loggedIn.jsp");
+			RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/jsp/botmenu.jsp");
 			dispatcher.forward(req, resp);
 		}
 		else if ("logout".equals(action)) {
 			cidaSametimeBot.close();
-			RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/jsp/index.jsp");
+			cidaSametimeBot = null;
+			RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/jsp/login.jsp");
 			dispatcher.forward(req, resp);
 		}
+		else {
+			if (cidaSametimeBot != null && cidaSametimeBot.isLoggedIn()) {
+				RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/jsp/botmenu.jsp");
+				dispatcher.forward(req, resp);
+			}
+			else {
+				RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/jsp/login.jsp");
+				dispatcher.forward(req, resp);
+			}
+		}
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		doPost(req, resp);
 	}
 }

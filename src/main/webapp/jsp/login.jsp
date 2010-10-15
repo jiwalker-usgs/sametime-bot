@@ -8,5 +8,13 @@
 </head>
 <body>
 
+<form action="bot" method="post">
+	<input type="hidden" name="action" value="login" />
+	Server name:<input type="text" id="server" name="server"/><br/>
+	Username:<input type="text" id="username" name="username"/><br/>
+	Password:<input type="password" id="password" name="password"/><br/>
+	<input type="submit"/>
+</form>
+
 </body>
 </html>

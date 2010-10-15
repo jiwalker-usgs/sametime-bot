@@ -1,5 +1,9 @@
 package gov.usgs.cida.cidabot;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import gov.usgs.cida.cidabot.helper.KeywordHelper;
 import gov.usgs.cida.cidabot.helper.RoomHelper;
 
@@ -18,7 +22,6 @@ import com.lotus.sametime.core.constants.ImTypes;
 import com.lotus.sametime.core.types.STLoginId;
 import com.lotus.sametime.core.types.STUser;
 import com.lotus.sametime.core.types.STUserInstance;
-import com.lotus.sametime.core.types.STUserStatus;
 import com.lotus.sametime.places.Place;
 import com.lotus.sametime.places.PlacesConstants;
 import com.lotus.sametime.places.PlacesService;
@@ -38,7 +41,7 @@ public class ConferenceManager implements ConfListener {
 	private PlacesService placesService;
 	
 	private static Logger log = Logger.getLogger(ConferenceManager.class);
-	
+
 	public ConferenceManager(STSession session) {
 		rooms = new LinkedHashMap<String, RoomHelper>();
 		intRoomMap = new LinkedHashMap<Integer, RoomHelper>();
@@ -49,7 +52,7 @@ public class ConferenceManager implements ConfListener {
 		confsTable = new ConfsTable();
 	}
 	
-	public boolean createConf(String roomName) {
+	public boolean createConf(String roomName) throws EOFException {
 		
 		String lcRoomName = roomName.toLowerCase();
 		if (rooms.containsKey(lcRoomName)) {
@@ -134,7 +137,10 @@ public class ConferenceManager implements ConfListener {
 	public void conferenceDenied(Integer arg0, int arg1) {}
 
 	@Override
-	public void conferenceDestroyed(Integer arg0, int arg1) {}
+	public void conferenceDestroyed(Integer arg0, int arg1) {
+		RoomHelper room = intRoomMap.get(arg0);
+		room.closeRoom();
+	}
 
 	@Override
 	public void conferenceIntruded(Integer confId, STUserInstance userInst, short dontknowwhatthisis) {
@@ -169,8 +175,13 @@ public class ConferenceManager implements ConfListener {
 			STUser userObj = rh.getUser(login.getId());
 			if (userObj != null) {
 				String userName = userObj.getName();
-				rh.addHistory(userName + ": " + text);
-				log.debug(userName + " said " + text);
+				log.debug("username is " + userName);
+				try {
+					rh.writeToLog(userName, text);
+				}
+				catch (IOException ioe) {
+					log.debug(ioe.getMessage());
+				}
 			}
 		}
 		String keywordResult = KeywordHelper.checkForKeywords(text);

@@ -4,7 +4,7 @@
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 	<display-name>CIDA-Bot {Owner:JIW, Coder:JIW, DMS}</display-name>
 	<welcome-file-list>
-		<welcome-file>jsp/index.jsp</welcome-file>
+		<welcome-file>bot</welcome-file>
 	</welcome-file-list>
 
 	<servlet>
@@ -14,6 +14,15 @@
 	<servlet-mapping>
 		<servlet-name>BotHandlerServlet</servlet-name>
 		<url-pattern>/bot</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>LogServlet</servlet-name>
+		<servlet-class>gov.usgs.cida.cidabot.servlet.LogServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>LogServlet</servlet-name>
+		<url-pattern>/log</url-pattern>
 	</servlet-mapping>
 	
 </web-app>
