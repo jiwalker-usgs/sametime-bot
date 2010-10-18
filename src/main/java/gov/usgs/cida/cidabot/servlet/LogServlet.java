@@ -1,5 +1,6 @@
 package gov.usgs.cida.cidabot.servlet;
 
+import gov.usgs.cida.cidabot.CIDABot;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,8 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-
-import static gov.usgs.cida.cidabot.BotConstants.LOG_PATH;
 
 public class LogServlet extends HttpServlet {
 
@@ -34,7 +33,7 @@ public class LogServlet extends HttpServlet {
 					.append("<input type='hidden' name='action' value='view'/>")
 					.append("<h3>Choose a file</h3>")
 					.append("<a href='bot'>Back to menu</a><br/>");
-			File logDir = new File(LOG_PATH);
+			File logDir = new File(CIDABot.LOG_PATH);
 			if (logDir.isDirectory()) {
 				for(File logFile : logDir.listFiles()) {
 					bufOut.append("<input type='radio' name='file' value='")
@@ -43,6 +42,9 @@ public class LogServlet extends HttpServlet {
 							.append(logFile.getName())
 							.append("</input><br/>");
 				}
+			}
+			else {
+				log.debug(logDir.getAbsoluteFile() + " is not a directory");
 			}
 			bufOut.append("<input type='submit' value='View'/>")
 					.append("</form>")
@@ -58,7 +60,7 @@ public class LogServlet extends HttpServlet {
 				returnFileNotFoundError(resp);
 				return;
 			}
-			File log = new File(LOG_PATH + "/" + file);
+			File log = new File(CIDABot.LOG_PATH + "/" + file);
 			if (!log.exists() || !log.canRead()) {
 				returnFileNotFoundError(resp);
 				return;

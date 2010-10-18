@@ -10,14 +10,13 @@ import org.apache.log4j.Logger;
 
 import com.lotus.sametime.core.types.STUser;
 import com.lotus.sametime.core.types.STUserInstance;
+import gov.usgs.cida.cidabot.CIDABot;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import static gov.usgs.cida.cidabot.BotConstants.LOG_PATH;
 
 public class RoomHelper {
 
@@ -44,7 +43,7 @@ public class RoomHelper {
 	private void openRoom() {
 		String dateString = new SimpleDateFormat("yyyyMMdd").format(new Date());
 		try {
-			File logFile = new File(LOG_PATH + "/" + confName + "." +
+			File logFile = new File(CIDABot.LOG_PATH + "/" + confName + "." +
 					dateString + ".log");
 			if (!logFile.exists()) {
 				logFile.createNewFile();

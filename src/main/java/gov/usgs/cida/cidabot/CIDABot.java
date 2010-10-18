@@ -1,5 +1,10 @@
 package gov.usgs.cida.cidabot;
 
+import java.util.List;
+import gov.usgs.cida.cidabot.helper.PropertyFactory;
+import java.io.IOException;
+import java.io.FileInputStream;
+import java.util.Properties;
 import java.io.EOFException;
 import com.lotus.sametime.awareness.*;
 import com.lotus.sametime.community.*;
@@ -23,7 +28,9 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 
 	private ConferenceManager confMan;
 	private Thread engine;
-	private String[] defaultRooms = { "JavaDev", "GenDev", "PM", "CIDA" };
+
+	private List<String> defaultRooms;// = { "JavaDev", "GenDev", "PM", "CIDA" };
+	public static String LOG_PATH;
 	
 	private static Logger log = Logger.getLogger(CIDABot.class);
 	
@@ -44,11 +51,16 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 	public CIDABot(String serverName, String userId, String password) {
 		try {
 			session = new STSession("CIDASametimeBot");
-		} catch (DuplicateObjectException e) {
+		}
+		catch (DuplicateObjectException e) {
 			e.printStackTrace();
 			return;
 		}
 
+		LOG_PATH = PropertyFactory.getProperty("chatlog.location");
+		defaultRooms = PropertyFactory.getValueList("default.rooms");
+		
+		
 		session.loadSemanticComponents();
 		session.start();
 

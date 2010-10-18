@@ -12,8 +12,6 @@ public final class BotConstants {
 	public static final String DELETE_FAILED = "Failed to delete room";
 	public static final String KEYWORD_ADDED = "Keyword added to the list";
 	public static final int DEFAULT_HISTORY_SIZE = 25;
-
-	public static final String LOG_PATH = "/var/log/bot";
 	
 	public static final String HELP_TEXT = "Command list (supports /cmd or !cmd)\n" +
 		"\t/help - this dialog\n" +
