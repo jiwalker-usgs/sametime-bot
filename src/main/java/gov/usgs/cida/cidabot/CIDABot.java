@@ -23,7 +23,7 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 
 	private ConferenceManager confMan;
 	private Thread engine;
-	private String[] defaultRooms = { /*"JavaDev",*/ "GenDev", "PM", "CIDA" };
+	private String[] defaultRooms = { "JavaDev", "GenDev", "PM", "CIDA" };
 	
 	private static Logger log = Logger.getLogger(CIDABot.class);
 	

@@ -31,17 +31,25 @@ public class LogServlet extends HttpServlet {
 					.append("<head><title>Log Viewer</title></head>")
 					.append("<body>")
 					.append("<form action='log' method='post'>")
-					.append("<input type='hidden' name='action' value='view'/>");
+					.append("<input type='hidden' name='action' value='view'/>")
+					.append("<h3>Choose a file</h3>")
+					.append("<a href='bot'>Back to menu</a><br/>");
 			File logDir = new File(LOG_PATH);
 			if (logDir.isDirectory()) {
 				for(File logFile : logDir.listFiles()) {
-					bufOut.append("<input type='button' name='file' value='")
+					bufOut.append("<input type='radio' name='file' value='")
 							.append(logFile.getName())
-							.append("' /><br/>");
+							.append("'>")
+							.append(logFile.getName())
+							.append("</input><br/>");
 				}
 			}
-			bufOut.append("</form>")
-					.append("</body></html>");
+			bufOut.append("<input type='submit' value='View'/>")
+					.append("</form>")
+					.append("<form action='log' method='post'>")
+					.append("<input type='hidden' name='action' value='list'/>")
+					.append("<input type='submit' value='Reload'/>")
+					.append("</form></body></html>");
 			bufOut.close();
 		}
 		else if ("view".equals(action)) {

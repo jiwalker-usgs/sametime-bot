@@ -52,7 +52,7 @@ public class RoomHelper {
 			if (!logFile.canWrite()) {
 				log.error("Cannot write to file");
 			}
-			this.chatLog = new BufferedWriter(new FileWriter(logFile));
+			this.chatLog = new BufferedWriter(new FileWriter(logFile, true));
 		} catch (IOException ioe) {
 			log.error(ioe.getMessage());
 		}
@@ -104,6 +104,7 @@ public class RoomHelper {
 	}
 	
 	public STUser getUser(String id) {
+		// this will return null if user was in room when bot arrives
 		return users.get(id);
 	}
 

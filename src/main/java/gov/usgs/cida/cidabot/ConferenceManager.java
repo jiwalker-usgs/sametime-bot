@@ -173,15 +173,16 @@ public class ConferenceManager implements ConfListener {
 		if (rh != null) {
 			log.debug("user " + login.getId() + " sent message " + text);
 			STUser userObj = rh.getUser(login.getId());
+			String userName = "unknown";
 			if (userObj != null) {
-				String userName = userObj.getName();
+				userName = userObj.getName();
 				log.debug("username is " + userName);
-				try {
+			}
+			try {
 					rh.writeToLog(userName, text);
 				}
-				catch (IOException ioe) {
+			catch (IOException ioe) {
 					log.debug(ioe.getMessage());
-				}
 			}
 		}
 		String keywordResult = KeywordHelper.checkForKeywords(text);
