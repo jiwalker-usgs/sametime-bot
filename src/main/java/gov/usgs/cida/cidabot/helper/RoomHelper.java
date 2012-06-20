@@ -10,13 +10,18 @@ import org.apache.log4j.Logger;
 
 import com.lotus.sametime.core.types.STUser;
 import com.lotus.sametime.core.types.STUserInstance;
+import com.lotus.sametime.im.Im;
 import gov.usgs.cida.cidabot.CIDABot;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class RoomHelper {
 
@@ -25,19 +30,23 @@ public class RoomHelper {
 	private Queue<String> history;
 	private int historyLength;
 	private Map<String, STUser> users;
+	private Set<Im> ims;
 	private BufferedWriter chatLog;
 	private String lastDate;
-	
+
+	private final boolean PSEUDO;
 	private static Logger log = Logger.getLogger(RoomHelper.class);
 	
-	public RoomHelper(Integer id, String confName, int historyLength) {
+	public RoomHelper(Integer id, String confName, int historyLength, boolean pseudo) {
 		this.confId = id;
 		this.confName = confName;
 		this.history = new LinkedList<String>();
 		this.historyLength = historyLength;
 		this.users = new HashMap<String, STUser>();
+		this.ims = new HashSet<Im>();
 		this.lastDate = "xxx";
 		this.chatLog = null;
+		this.PSEUDO = pseudo;
 	}
 
 	private void openRoom() {
@@ -90,14 +99,28 @@ public class RoomHelper {
 		}
 		return buf.toString();
 	}
-	
+
+	public void addUser(Im im) {
+		ims.add(im);
+		addUser(im.getPartnerDetails());
+		String name = im.getPartnerDetails().getName();
+		sendToUsers(im, name + " has entered the room");
+	}
+
 	public void addUser(STUserInstance stu) {
 		log.debug("user " + stu.getName() + " has id " + stu.getId().getId());
 		if (!users.keySet().contains(stu.getName())) {
 			users.put(stu.getLoginId().getId(), stu);
 		}
 	}
-	
+
+	public void removeUser(Im im) {
+		ims.remove(im);
+		removeUser(im.getPartnerDetails().getLoginId().getId());
+		String name = im.getPartnerDetails().getName();
+		sendToUsers(im, name + " has left the room");
+	}
+
 	public void removeUser(String id) {
 		users.remove(id);
 	}
@@ -131,6 +154,18 @@ public class RoomHelper {
 		}
 		catch(IOException ioe) {
 			log.debug("problem closing file");
+		}
+	}
+
+	public Collection<STUser> getUsers() {
+		return users.values();
+	}
+
+	public void sendToUsers(Im im, String text) {
+		for (Im user : ims) {
+			if (!user.equals(im)) {
+					user.sendText(true, text);
+			}
 		}
 	}
 

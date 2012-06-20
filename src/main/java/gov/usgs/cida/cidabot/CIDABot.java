@@ -25,8 +25,14 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 	private STSession session;
 	private CommunityService communityService;
 	private InstantMessagingService imService;
+	private BotCommands cmds;
 
+	// This is for multi-user rooms
 	private ConferenceManager confMan;
+	
+	// This is for psuedo-rooms
+	private RoomManager roomMan;
+
 	private Thread engine;
 
 	private List<String> defaultRooms;// = { "JavaDev", "GenDev", "PM", "CIDA" };
@@ -69,7 +75,9 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		communityService.loginByPassword(serverName, userId, password.toCharArray());
 		
 		confMan = new ConferenceManager(session);
+		roomMan = new RoomManager();
 
+		cmds = new BotCommands(confMan, roomMan);
 	}
 
 	@Override
@@ -125,10 +133,11 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		Im im = e.getIm();
 		String message = e.getText();
 		STUserInstance sender = im.getPartnerDetails();
-		String response = parseMessage(message, sender);
-		im.sendText(true, response);
+		String response = parseMessage(message, im);
+		if (response != null) {
+			im.sendText(true, response);
+		}
 		log.info("Message received from " + sender.getName());
-		log.info(message);
 	}
 
 	public void serviceAvailable(AwarenessServiceEvent e) {}
@@ -164,21 +173,21 @@ public class CIDABot implements Runnable, LoginListener, ImServiceListener, ImLi
 		return communityService.isLoggedIn() && session.isActive();
 	}
 
-	private String parseMessage(String text, STUserInstance user) {
+	private String parseMessage(String text, Im im) {
 		Matcher cmdMatch = cmdPatt.matcher(text);
 		if (cmdMatch.matches()) {
 			String cmd = cmdMatch.group(1);
 			String args = cmdMatch.group(2);
 			if (cmd.equals("")) {
-				return confMan.runCommand(user, "help", null);
+				return cmds.runCommand(im, "help", null);
 			}
 			else {
-				return confMan.runCommand(user, cmd, args);
+				return cmds.runCommand(im, cmd, args);
 			}
 		}
 		else {
-			log.info("Command not matching");
-			return HELP_TEXT;
+			roomMan.addToChat(im, text);
+			return null;
 		}
 	}
 }

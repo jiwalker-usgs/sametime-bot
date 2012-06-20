@@ -28,7 +28,7 @@ public class BotHandlerServlet extends HttpServlet {
 			String userId = req.getParameter("username");
 			String password = req.getParameter("password");
 			
-			log.debug("server:" + serverName + " userId:" + userId + " password:" + password);
+			log.debug("server:" + serverName);
 			if (cidaSametimeBot == null) {
 				cidaSametimeBot = new CIDABot(serverName, userId, password);
 			}

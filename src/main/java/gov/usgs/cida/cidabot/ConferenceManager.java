@@ -32,9 +32,8 @@ import static gov.usgs.cida.cidabot.BotConstants.*;
 public class ConferenceManager implements ConfListener {
 
 	private ConfService confService;
-	private Map<String, RoomHelper> rooms;
+	private Map<String, RoomHelper> nameRoomMap;
 	private Map<Integer, RoomHelper> intRoomMap;
-	private BotCommands coms;
 	private STLoginId myLoginId;
 	private ConfsTable confsTable;
 	
@@ -43,19 +42,19 @@ public class ConferenceManager implements ConfListener {
 	private static Logger log = Logger.getLogger(ConferenceManager.class);
 
 	public ConferenceManager(STSession session) {
-		rooms = new LinkedHashMap<String, RoomHelper>();
+		nameRoomMap = new LinkedHashMap<String, RoomHelper>();
 		intRoomMap = new LinkedHashMap<Integer, RoomHelper>();
+
 		confService = (ConfService)session.getCompApi(ConfService.COMP_NAME);
 		confService.addConfListener(this);
 		placesService = (PlacesService)session.getCompApi(PlacesService.COMP_NAME);
-		coms = new BotCommands(this);
 		confsTable = new ConfsTable();
 	}
 	
 	public boolean createConf(String roomName) throws EOFException {
 		
 		String lcRoomName = roomName.toLowerCase();
-		if (rooms.containsKey(lcRoomName)) {
+		if (nameRoomMap.containsKey(lcRoomName)) {
 			return false;
 		}
 		ConfInfo info = new ConfInfo(roomName, roomName);
@@ -65,8 +64,8 @@ public class ConferenceManager implements ConfListener {
 			//confService.autoInviteToConference(arg0, arg1, arg2, arg3, arg4);
 			log.debug("create conference returned: " + confId);
 			confService.joinToConference(confId);
-			RoomHelper confObj = new RoomHelper(confId, roomName, DEFAULT_HISTORY_SIZE);
-			rooms.put(lcRoomName, confObj);
+			RoomHelper confObj = new RoomHelper(confId, roomName, DEFAULT_HISTORY_SIZE, false);
+			nameRoomMap.put(lcRoomName, confObj);
 			intRoomMap.put(confId, confObj);
 		}
 		return true;
@@ -74,11 +73,11 @@ public class ConferenceManager implements ConfListener {
 	
 	public boolean inviteConf(String roomName, STUserInstance user) {
 		String lcRoomName = roomName.toLowerCase();
-		if (!rooms.containsKey(lcRoomName)) {
+		if (!nameRoomMap.containsKey(lcRoomName)) {
 			return false;
 		}
 		else {
-			Integer confId = rooms.get(lcRoomName).getId();
+			Integer confId = nameRoomMap.get(lcRoomName).getId();
 			confService.inviteToConference(confId, user.getId(), roomName, user.getLoginId(), roomName);
 			return true;
 			
@@ -88,23 +87,23 @@ public class ConferenceManager implements ConfListener {
 	
 	public boolean removeConf(String roomName) {
 		String lcRoomName = roomName.toLowerCase();
-		if (!rooms.containsKey(lcRoomName)) {
+		if (!nameRoomMap.containsKey(lcRoomName)) {
 			return false;
 		}
 		
-		Integer confId = rooms.get(lcRoomName).getId();
+		Integer confId = nameRoomMap.get(lcRoomName).getId();
 		confService.destroyConference(confId);
-		rooms.remove(lcRoomName);
+		nameRoomMap.remove(lcRoomName);
 		intRoomMap.remove(confId);
 		return true;
 	}
 	
 	public String[] roomList() {
-		String[] roomList = new String[rooms.size()];
-		Iterator<String> it = rooms.keySet().iterator();
+		String[] roomList = new String[nameRoomMap.size()];
+		Iterator<String> it = nameRoomMap.keySet().iterator();
 		int i = 0;
 		while (it.hasNext()) {
-			roomList[i] = rooms.get(it.next()).getName();
+			roomList[i] = nameRoomMap.get(it.next()).getName();
 			i++;
 		}
 		
@@ -112,17 +111,13 @@ public class ConferenceManager implements ConfListener {
 	}
 	
 	public String getHistory(String roomName) {
-		RoomHelper room = rooms.get(roomName);
+		RoomHelper room = nameRoomMap.get(roomName);
 		if (room != null) {
 			return room.getHistory();
 		}
 		else {
 			return "";
 		}
-	}
-	
-	public String runCommand(STUserInstance user, String cmd, String args) {
-		return coms.runCommand(user, cmd, args);
 	}
 
 	@Override

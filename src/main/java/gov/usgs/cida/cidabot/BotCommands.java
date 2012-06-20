@@ -1,5 +1,6 @@
 package gov.usgs.cida.cidabot;
 
+import com.lotus.sametime.im.Im;
 import java.io.EOFException;
 import gov.usgs.cida.cidabot.helper.KeywordHelper;
 
@@ -10,9 +11,11 @@ import static gov.usgs.cida.cidabot.BotConstants.*;
 public class BotCommands {
 
 	private ConferenceManager confMan;
+	private RoomManager roomMan;
 
-	public BotCommands(ConferenceManager confMan) {
+	public BotCommands(ConferenceManager confMan, RoomManager roomMan) {
 		this.confMan = confMan;
+		this.roomMan = roomMan;
 	}
 
 	/* Run command associated with String cmd, return resulting output
@@ -22,9 +25,12 @@ public class BotCommands {
 	 * @param args argument list for command (may be null)
 	 * @return result string from command
 	 */
-	public String runCommand(STUserInstance user, String cmd, String args) {
+	public String runCommand(Im im, String cmd, String args) {
+		STUserInstance user = im.getPartnerDetails();
 		if (cmd.equalsIgnoreCase("join")) {
-			return join(user, args);
+			return invite(user, args);
+		} else if (cmd.equalsIgnoreCase("invite")) {
+			return invite(user, args);
 		} else if (cmd.equalsIgnoreCase("list")) {
 			return printRoomList();
 		} else if (cmd.equalsIgnoreCase("add")) {
@@ -35,6 +41,10 @@ public class BotCommands {
 			return keyword(args);
 		} else if (cmd.equalsIgnoreCase("history")) {
 			return history(args);
+		} else if (cmd.equalsIgnoreCase("enter")) {
+			return enter(im, args);
+		} else if (cmd.equalsIgnoreCase("leave")) {
+			return leave(im);
 		}
 		return HELP_TEXT;
 	}
@@ -67,7 +77,7 @@ public class BotCommands {
 		return KEYWORD_ADDED;
 	}
 
-	private String join(STUserInstance user, String roomArgs) {
+	private String invite(STUserInstance user, String roomArgs) {
 		if (roomArgs == null || roomArgs.equals("")) {
 			return printRoomList();
 		}
@@ -110,6 +120,27 @@ public class BotCommands {
 			return DELETED;
 		} else {
 			return DELETE_FAILED;
+		}
+	}
+
+	private String enter(Im im, String roomArgs) {
+		if (roomArgs == null || roomArgs.equals("")) {
+			return printRoomList();
+		}
+		if (roomMan.enterRoom(im, roomArgs)) {
+			return "You are now listening to the room " + roomArgs;
+		}
+		else {
+			return INVITE_FAILED + "\n";
+		}
+	}
+
+	private String leave(Im im) {
+		if (roomMan.leaveRoom(im)) {
+			return "You are no longer listening to the chat";
+		}
+		else {
+			return "There is something wrong, I can't remove you from chat";
 		}
 	}
 
